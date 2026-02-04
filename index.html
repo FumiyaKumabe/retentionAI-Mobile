@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>リテンションAI - 隊員アプリ v2 (Light)</title>
+    
+    <!-- React & DOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        body { 
+            font-family: 'Noto Sans JP', sans-serif; 
+            background-color: #f8fafc; /* Slate 50 (Light) */
+            color: #1e293b; /* Slate 800 (Dark Text) */
+            overscroll-behavior-y: none;
+        }
+        
+        .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom, 20px); }
+        
+        /* Animations */
+        @keyframes popIn { 0% { transform: scale(0.95); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .animate-pop-in { animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .animate-slide-up { animation: slideUp 0.3s ease-out forwards; }
+
+        @keyframes glow { 0%, 100% { box-shadow: 0 0 5px rgba(244, 63, 94, 0.5), 0 0 10px rgba(244, 63, 94, 0.3); } 50% { box-shadow: 0 0 20px rgba(244, 63, 94, 0.8), 0 0 30px rgba(244, 63, 94, 0.5); } }
+        .animate-glow { animation: glow 2s infinite; }
+
+        @keyframes wave { 0%, 100% { height: 10px; } 50% { height: 24px; } }
+        .animate-wave { animation: wave 1s ease-in-out infinite; }
+        
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- 1. Icons Component ---
+        const Icon = ({ name, size = 24, className = "" }) => {
+            const icons = {
+                Home: <><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></>,
+                MessageSquare: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>,
+                Gift: <><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></>,
+                User: <><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>,
+                Mic: <><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></>,
+                Send: <><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></>,
+                ChevronRight: <polyline points="9 18 15 12 9 6"/>,
+                Star: <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>,
+                Bell: <><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></>,
+                CheckCircle: <><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></>,
+                Coffee: <><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></>,
+                CreditCard: <><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></>,
+                ShoppingBag: <><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></>,
+                X: <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>,
+                Zap: <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>,
+                Info: <><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></>,
+                AlertTriangle: <><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></>,
+                FileText: <><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></>
+            };
+            return (
+                <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                    {icons[name] || icons.Home}
+                </svg>
+            );
+        };
+
+        // --- 2. Mock Data ---
+        const USER = {
+            name: "佐藤 健一",
+            rank: "Gold",
+            points: 2450,
+            nextRankPoints: 3000,
+            rankProgress: 81,
+            avatar: "SK",
+            department: "第2警備隊"
+        };
+
+        const MISSIONS = [
+            { id: 99, title: "AI業務報告・健康チェック", points: 300, done: false, required: true, type: "AI" },
+            { id: 1, title: "制服チェック", points: 20, done: true, required: false },
+            { id: 3, title: "無遅刻 (週間継続中)", points: 100, done: false, badge: "BONUS", required: false }
+        ];
+
+        const COUPONS = [
+            { id: 1, title: "カフェ無料券", points: 500, icon: "Coffee", color: "bg-amber-100 text-amber-600" },
+            { id: 2, title: "Amazonギフト ¥1000", points: 2000, icon: "CreditCard", color: "bg-blue-100 text-blue-600" },
+            // Changed from Special Leave Ticket to Catalog Gift
+            { id: 3, title: "選べるカタログギフト ¥5000", points: 5000, icon: "Gift", color: "bg-purple-100 text-purple-600" },
+            { id: 4, title: "コンビニクーポン ¥500", points: 1000, icon: "ShoppingBag", color: "bg-emerald-100 text-emerald-600" },
+        ];
+
+        // --- 3. Components ---
+
+        // 3.1 Rank Card (Slightly adjusted for light mode: dark card on light bg)
+        const RankCard = ({ user, onOpenRankDetail }) => (
+            <div className="relative w-full h-44 bg-gradient-to-r from-slate-700 to-slate-900 rounded-3xl shadow-xl border border-slate-600/50 overflow-hidden p-6 text-white mb-6">
+                <div className="absolute top-0 right-0 p-4 opacity-10"><Icon name="Zap" size={120} /></div>
+                <div className="relative z-10 flex flex-col justify-between h-full">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <p className="text-slate-300 text-[10px] font-bold tracking-wider mb-1">CURRENT RANK</p>
+                            <h2 className="text-3xl font-black tracking-tight flex items-center gap-2 text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 to-amber-500">
+                                {user.rank} <span className="text-sm opacity-80 text-slate-300 font-normal">Rank</span>
+                            </h2>
+                        </div>
+                        <button onClick={onOpenRankDetail} className="bg-white/10 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold border border-white/20 flex items-center gap-1 hover:bg-white/20 transition">
+                            <Icon name="Info" size={12}/> 特典確認
+                        </button>
+                    </div>
+                    <div>
+                        <div className="flex justify-between items-end mb-2">
+                            <div className="text-3xl font-bold font-mono text-white">{user.points.toLocaleString()}<span className="text-sm font-normal ml-1 text-slate-300">pt</span></div>
+                            <div className="text-[10px] text-slate-300 mb-1">Next: Platinumまで {user.nextRankPoints - user.points}pt</div>
+                        </div>
+                        <div className="w-full bg-slate-600 h-1.5 rounded-full overflow-hidden">
+                            <div className="bg-gradient-to-r from-yellow-400 to-amber-600 h-full rounded-full" style={{width: `${user.rankProgress}%`}}></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+
+        // 3.2 Chat Interface (Light Mode)
+        const ChatScreen = ({ onClose }) => {
+            const [input, setInput] = useState("");
+            const [isRecording, setIsRecording] = useState(false);
+            const [isReportMode, setIsReportMode] = useState(true);
+            
+            const [messages, setMessages] = useState([
+                { id: 101, sender: "ai", text: "【自動送信】佐藤さん、おはようございます。昨日の勤務お疲れ様でした。", time: "Yesterday 09:00", type: "system" },
+                { id: 102, sender: "user", text: "日報提出します。特異事項なし。21:00に搬入口でセンサー誤作動ありましたが対応済みです。", time: "Yesterday 09:15" },
+                { id: 103, sender: "ai", text: "報告ありがとうございます。センサー誤作動の件、管制日報に転記しました。詳細な場所は「北側搬入口」で間違いないですか？", time: "Yesterday 09:16" },
+                { id: 104, sender: "user", text: "はい、北側です。", time: "Yesterday 09:17" },
+                { id: 105, sender: "ai", text: "了解しました。本日の業務前の体調確認を行います。現在、腰の痛みや疲労感はどうですか？", time: "Today 17:00", type: "system" }
+            ]);
+            const messagesEndRef = useRef(null);
+
+            const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            useEffect(scrollToBottom, [messages, isRecording]);
+
+            const handleSend = () => {
+                if (!input.trim()) return;
+                setMessages([...messages, { id: Date.now(), sender: "user", text: input, time: "Just now" }]);
+                setInput("");
+                setTimeout(() => {
+                    setMessages(prev => [...prev, { id: Date.now()+1, sender: "ai", text: "記録しました。他に報告事項はありますか？なければ「なし」と答えてください。", time: "Just now" }]);
+                }, 1000);
+            };
+
+            const toggleRecord = () => {
+                if (isRecording) {
+                    setIsRecording(false);
+                    setMessages([...messages, { id: Date.now(), sender: "user", text: "（音声入力）特に問題ありません。今日も通常通り現場に向かいます。", time: "Just now" }]);
+                    setTimeout(() => {
+                        setMessages(prev => [...prev, { id: Date.now()+1, sender: "ai", text: "確認しました。それでは本日の業務も安全第一でお願いします。行ってらっしゃいませ！\n（日報提出タスク完了：+300pt）", time: "Just now", type: "success" }]);
+                    }, 1500);
+                } else {
+                    setIsRecording(true);
+                }
+            };
+
+            return (
+                <div className="flex flex-col h-full bg-slate-50 relative">
+                    {/* Chat Header */}
+                    <div className="bg-white/90 backdrop-blur p-4 pt-12 pb-3 shadow-sm flex items-center justify-between sticky top-0 z-20 border-b border-slate-200">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-lg ring-2 ring-indigo-200">
+                                <Icon name="Zap" size={20}/>
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-slate-800 text-sm">AIメンター (業務報告中)</h3>
+                                <div className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span><span className="text-[10px] text-emerald-600 font-bold">必須タスク進行中</span></div>
+                            </div>
+                        </div>
+                        <button onClick={onClose} className="p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition"><Icon name="X" size={18}/></button>
+                    </div>
+
+                    {/* Messages Area */}
+                    <div className="flex-1 overflow-y-auto p-4 space-y-5 pb-32 bg-slate-50">
+                        <div className="text-center text-[10px] text-slate-400 my-2">履歴は暗号化され保存されています</div>
+                        {messages.map(msg => (
+                            <div key={msg.id} className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
+                                <div className={`max-w-[85%] rounded-2xl p-4 text-sm shadow-sm leading-relaxed
+                                    ${msg.sender === 'user' ? 'bg-indigo-600 text-white rounded-br-none shadow-indigo-200' : 
+                                      msg.type === 'success' ? 'bg-emerald-50 border border-emerald-200 text-emerald-800' :
+                                      'bg-white text-slate-700 rounded-bl-none border border-slate-200'}`}>
+                                    {msg.text}
+                                    {msg.type === 'success' && <div className="mt-2 flex items-center gap-1 text-emerald-600 font-bold text-xs"><Icon name="CheckCircle" size={14}/> 完了</div>}
+                                </div>
+                                <span className="text-[10px] text-slate-400 mt-1 px-1">{msg.time}</span>
+                            </div>
+                        ))}
+                        {isRecording && (
+                            <div className="flex justify-end">
+                                <div className="bg-indigo-50 p-4 rounded-2xl rounded-br-none flex items-center gap-1 h-12 border border-indigo-100 text-indigo-500">
+                                    {[1,2,3,4,5].map(i => (
+                                        <div key={i} className="w-1 bg-indigo-500 rounded-full animate-wave" style={{animationDelay: `${i * 0.1}s`}}></div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        <div ref={messagesEndRef} />
+                    </div>
+
+                    {/* Input Area */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-white p-4 safe-area-bottom border-t border-slate-200 shadow-lg">
+                        {isRecording ? (
+                            <div className="flex flex-col items-center justify-center py-4 gap-4">
+                                <p className="text-indigo-600 font-bold animate-pulse text-sm">回答を音声で入力中...</p>
+                                <button onClick={toggleRecord} className="w-20 h-20 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-2xl scale-110 transition-transform ring-4 ring-rose-200">
+                                    <div className="w-8 h-8 bg-white rounded-sm"></div>
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-3">
+                                <button onClick={toggleRecord} className="w-12 h-12 shrink-0 rounded-full bg-slate-100 text-indigo-600 flex items-center justify-center hover:bg-slate-200 transition border border-slate-200">
+                                    <Icon name="Mic" size={24}/>
+                                </button>
+                                <div className="flex-1 relative">
+                                    <input 
+                                        type="text" 
+                                        value={input}
+                                        onChange={(e) => setInput(e.target.value)}
+                                        placeholder="ここに入力..."
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-full py-3.5 px-4 text-sm text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:outline-none placeholder-slate-400"
+                                        onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                                    />
+                                </div>
+                                <button onClick={handleSend} className={`w-12 h-12 shrink-0 rounded-full flex items-center justify-center transition-all ${input.trim() ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'bg-slate-200 text-slate-400'}`}>
+                                    <Icon name="Send" size={20}/>
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // 3.3 Rank Detail Modal (Light Mode)
+        const RankDetailModal = ({ user, onClose }) => (
+            <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center bg-black/50 backdrop-blur-sm animate-pop-in" onClick={onClose}>
+                <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 animate-slide-up shadow-2xl" onClick={e => e.stopPropagation()}>
+                    <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6"></div>
+                    <div className="text-center mb-6">
+                        <h3 className="text-xl font-bold text-slate-800">ランク制度・特典</h3>
+                        <p className="text-sm text-slate-500">ランクUPでポイント獲得効率が上昇</p>
+                    </div>
+                    
+                    <div className="space-y-3">
+                        {['Bronze', 'Silver', 'Gold', 'Platinum'].map((rank, i) => {
+                            const isCurrent = user.rank === rank;
+                            const colors = {
+                                Bronze: "border-orange-200 bg-orange-50 text-orange-800",
+                                Silver: "border-slate-300 bg-slate-100 text-slate-700",
+                                Gold: "border-yellow-300 bg-yellow-50 text-yellow-800 ring-1 ring-yellow-400",
+                                Platinum: "border-indigo-200 bg-indigo-50 text-indigo-800"
+                            };
+                            return (
+                                <div key={rank} className={`p-4 rounded-xl border flex justify-between items-center ${isCurrent ? colors[rank] : 'border-slate-100 bg-slate-50 text-slate-400'}`}>
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${isCurrent ? 'bg-white shadow-sm' : 'bg-slate-200 text-slate-400'}`}>
+                                            {rank.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <p className="font-bold">{rank} <span className="text-xs font-normal opacity-80">Rank</span></p>
+                                            <p className="text-[10px] opacity-70">獲得ポイント {1.0 + i * 0.1}倍</p>
+                                        </div>
+                                    </div>
+                                    {isCurrent && <span className="bg-indigo-600 text-white px-2 py-1 rounded text-[10px] font-bold shadow-sm">現在地</span>}
+                                </div>
+                            );
+                        })}
+                    </div>
+                    <button onClick={onClose} className="w-full mt-8 bg-slate-800 text-white py-3 rounded-xl font-bold hover:bg-slate-700 shadow-lg">閉じる</button>
+                </div>
+            </div>
+        );
+
+        // 3.4 Coupon Modal (Light Mode)
+        const CouponModal = ({ item, userPoints, onClose }) => {
+            const [step, setStep] = useState('confirm'); 
+
+            const handleExchange = () => {
+                setStep('processing');
+                setTimeout(() => setStep('done'), 1500);
+            };
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-pop-in">
+                    <div className="bg-white w-full max-w-sm rounded-3xl p-6 relative overflow-hidden text-center shadow-2xl">
+                        {step === 'confirm' && (
+                            <>
+                                <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-4 ${item.color}`}>
+                                    <Icon name={item.icon} size={32} />
+                                </div>
+                                <h3 className="text-xl font-bold text-slate-800 mb-2">{item.title}</h3>
+                                <p className="text-slate-500 mb-6 text-sm">このクーポンと交換しますか？</p>
+                                
+                                <div className="bg-slate-50 p-4 rounded-xl mb-6 flex justify-between items-center border border-slate-100">
+                                    <div className="text-left">
+                                        <p className="text-xs text-slate-400">所有ポイント</p>
+                                        <p className="font-bold text-slate-700">{userPoints.toLocaleString()}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-xs text-slate-400">消費ポイント</p>
+                                        <p className="font-bold text-rose-500">-{item.points.toLocaleString()}</p>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button onClick={onClose} className="py-3 rounded-xl font-bold text-slate-500 bg-slate-100 hover:bg-slate-200">キャンセル</button>
+                                    <button 
+                                        onClick={handleExchange} 
+                                        disabled={userPoints < item.points}
+                                        className={`py-3 rounded-xl font-bold text-white shadow-lg ${userPoints < item.points ? 'bg-slate-300 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                                    >
+                                        交換する
+                                    </button>
+                                </div>
+                            </>
+                        )}
+
+                        {step === 'processing' && (
+                            <div className="py-10">
+                                <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+                                <p className="font-bold text-indigo-600">処理中...</p>
+                            </div>
+                        )}
+
+                        {step === 'done' && (
+                            <div className="py-6 animate-pop-in">
+                                <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <Icon name="Gift" size={40} />
+                                </div>
+                                <h3 className="text-xl font-black text-slate-800 mb-2">交換完了！</h3>
+                                <p className="text-sm text-slate-500 mb-6">クーポンコードが発行されました。<br/>メールをご確認ください。</p>
+                                <button onClick={onClose} className="w-full py-3 bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-200 hover:bg-emerald-600">閉じる</button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- 4. Main Views ---
+
+        // 4.1 Home Tab (Light Mode)
+        const HomeTab = ({ onChatStart }) => {
+            const [showRankModal, setShowRankModal] = useState(false);
+
+            return (
+                <div className="p-5 pb-32 animate-fade-in text-slate-800">
+                    {/* Header */}
+                    <div className="flex justify-between items-center mb-6">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600 border-2 border-white shadow-sm">
+                                {USER.avatar}
+                            </div>
+                            <div>
+                                <h1 className="font-bold text-slate-800 leading-tight">お疲れ様です！</h1>
+                                <p className="text-xs text-slate-500">{USER.name}さん</p>
+                            </div>
+                        </div>
+                        <button className="relative p-2 bg-white rounded-full text-slate-400 shadow-sm border border-slate-100">
+                            <Icon name="Bell" size={20}/>
+                            <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white"></span>
+                        </button>
+                    </div>
+
+                    {/* Alert Banner for Mandatory Task */}
+                    <div className="mb-6 animate-slide-up">
+                        <div className="bg-rose-50 border border-rose-100 rounded-2xl p-4 flex items-start gap-3 shadow-sm">
+                            <div className="p-2 bg-rose-500 text-white rounded-full shrink-0 animate-pulse shadow-rose-200">
+                                <Icon name="AlertTriangle" size={18} />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-rose-600 text-sm">本日の業務報告が未完了です</h3>
+                                <p className="text-[10px] text-rose-400 mt-1 leading-tight">業務終了後、必ずAI面談を実施してください。<br/>未実施の場合、勤怠承認が行われません。</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Rank Card */}
+                    <RankCard user={USER} onOpenRankDetail={() => setShowRankModal(true)} />
+
+                    {/* Mandatory AI Action - Light Mode Visualization */}
+                    <div className="mb-8">
+                        <button onClick={onChatStart} className="w-full relative group overflow-hidden rounded-2xl shadow-lg shadow-rose-500/20 active:scale-95 transition-transform">
+                            {/* Animated Background */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-rose-500 to-orange-500 opacity-90 group-hover:opacity-100 transition-opacity"></div>
+                            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-30"></div>
+                            
+                            <div className="relative p-5 flex items-center gap-4">
+                                <div className="w-14 h-14 rounded-full bg-white/20 text-white flex items-center justify-center relative backdrop-blur-sm animate-glow border border-white/30">
+                                    <Icon name="FileText" size={28}/>
+                                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-600 rounded-full border-2 border-white flex items-center justify-center text-[8px] font-bold shadow-sm">!</span>
+                                </div>
+                                <div className="flex-1 text-left text-white">
+                                    <div className="flex items-center gap-2 mb-0.5">
+                                        <h3 className="font-black text-lg tracking-wide">AI業務報告を開始</h3>
+                                        <span className="bg-white/20 text-[10px] px-2 py-0.5 rounded font-bold backdrop-blur">必須</span>
+                                    </div>
+                                    <p className="text-xs text-rose-50 opacity-90">本日の体調・ヒヤリハット報告</p>
+                                </div>
+                                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white">
+                                    <Icon name="ChevronRight" size={18}/>
+                                </div>
+                            </div>
+                        </button>
+                    </div>
+
+                    {/* Missions (Light Mode) */}
+                    <div>
+                        <div className="flex justify-between items-end mb-3">
+                            <h3 className="font-bold text-slate-700">本日のタスクリスト</h3>
+                            <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">残り 2つ</span>
+                        </div>
+                        <div className="space-y-3">
+                            {MISSIONS.map(m => (
+                                <div key={m.id} 
+                                    className={`p-4 rounded-xl border flex items-center gap-3 transition-all relative overflow-hidden
+                                    ${m.done ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-white border-slate-200 shadow-sm'}
+                                    ${m.required && !m.done ? 'border-l-4 border-l-rose-500' : ''}
+                                `}>
+                                    {/* Task Status Icon */}
+                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 border-2 
+                                        ${m.done ? 'bg-emerald-500 border-emerald-500 text-white' : 
+                                          m.required ? 'border-rose-500 text-rose-500' : 'border-slate-300 text-slate-300'}`}>
+                                        {m.done && <Icon name="CheckCircle" size={14}/>}
+                                        {!m.done && m.required && <span className="w-2 h-2 bg-rose-500 rounded-full"></span>}
+                                    </div>
+
+                                    <div className="flex-1 z-10">
+                                        <div className="flex items-center gap-2">
+                                            <p className={`font-bold text-sm ${m.done ? 'text-slate-400 line-through' : 'text-slate-800'}`}>{m.title}</p>
+                                            {m.required && !m.done && <span className="text-[9px] bg-rose-500 text-white px-1.5 py-0.5 rounded font-bold">未完了</span>}
+                                            {m.badge && <span className="text-[9px] bg-amber-100 text-amber-600 px-1.5 py-0.5 rounded font-bold">{m.badge}</span>}
+                                        </div>
+                                        <p className="text-xs text-slate-400 mt-0.5">+{m.points}pt</p>
+                                    </div>
+                                    
+                                    {m.required && !m.done && (
+                                        <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-rose-50 to-transparent pointer-events-none"></div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {showRankModal && <RankDetailModal user={USER} onClose={() => setShowRankModal(false)} />}
+                </div>
+            );
+        };
+
+        // 4.2 Wallet/Points Tab (Light Mode)
+        const WalletTab = () => {
+            const [selectedCoupon, setSelectedCoupon] = useState(null);
+
+            return (
+                <div className="p-5 pb-32 animate-fade-in text-slate-800">
+                    <h2 className="text-xl font-bold text-slate-800 mb-4">ポイント交換</h2>
+                    
+                    {/* Dark Card stays dark for premium feel, but maybe slightly adjusted */}
+                    <div className="bg-gradient-to-br from-indigo-600 to-slate-800 text-white p-6 rounded-2xl shadow-xl shadow-indigo-200 mb-8 relative overflow-hidden border border-white/10">
+                        <div className="absolute -right-6 -bottom-6 text-white opacity-5"><Icon name="Gift" size={120} /></div>
+                        <p className="text-indigo-100 text-xs font-bold mb-1 tracking-wider">AVAILABLE POINTS</p>
+                        <h3 className="text-4xl font-black font-mono tracking-tight mb-4 text-white">{USER.points.toLocaleString()}</h3>
+                        <div className="flex gap-2">
+                            <button className="flex-1 bg-white/10 hover:bg-white/20 backdrop-blur py-2 rounded-lg text-sm font-bold transition border border-white/20">履歴を見る</button>
+                            <button className="flex-1 bg-white text-indigo-700 py-2 rounded-lg text-sm font-bold shadow-md hover:bg-indigo-50 transition">貯め方ガイド</button>
+                        </div>
+                    </div>
+
+                    <h3 className="font-bold text-slate-700 mb-3 flex items-center gap-2"><Icon name="ShoppingBag" size={18}/> クーポン一覧</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                        {COUPONS.map(c => (
+                            <div key={c.id} onClick={() => setSelectedCoupon(c)} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center active:scale-95 transition-transform cursor-pointer hover:border-slate-300 hover:shadow-md">
+                                <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 ${c.color}`}>
+                                    <Icon name={c.icon} size={24} />
+                                </div>
+                                <h4 className="font-bold text-slate-700 text-sm mb-1 leading-tight h-10 flex items-center justify-center">{c.title}</h4>
+                                <div className="text-amber-600 font-bold font-mono text-sm bg-amber-50 px-2 py-1 rounded-md mt-1 border border-amber-100">{c.points.toLocaleString()} pt</div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {selectedCoupon && <CouponModal item={selectedCoupon} userPoints={USER.points} onClose={() => setSelectedCoupon(null)} />}
+                </div>
+            );
+        };
+
+        // --- 5. Main App Shell ---
+        const App = () => {
+            const [activeTab, setActiveTab] = useState('home');
+            const [isChatOpen, setIsChatOpen] = useState(false);
+
+            const showNav = !isChatOpen;
+
+            return (
+                <div className="bg-slate-50 min-h-screen relative max-w-md mx-auto shadow-2xl overflow-hidden flex flex-col border-x border-slate-200">
+                    {/* Main Content Area */}
+                    <div className="flex-1 overflow-y-auto no-scrollbar">
+                        {isChatOpen ? (
+                            <ChatScreen onClose={() => setIsChatOpen(false)} />
+                        ) : (
+                            <>
+                                {activeTab === 'home' && <HomeTab onChatStart={() => setIsChatOpen(true)} />}
+                                {activeTab === 'wallet' && <WalletTab />}
+                                {activeTab === 'profile' && <div className="p-10 text-center text-slate-400 mt-20"><Icon name="User" size={48} className="mx-auto mb-4"/>プロフィール画面 (WIP)</div>}
+                            </>
+                        )}
+                    </div>
+
+                    {/* Bottom Navigation (Light Mode) */}
+                    {showNav && (
+                        <nav className="absolute bottom-6 left-4 right-4 bg-white/90 backdrop-blur-md border border-slate-200 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-2xl h-16 flex items-center justify-around z-10 safe-area-bottom">
+                            {[
+                                { id: 'home', icon: 'Home', label: 'ホーム' },
+                                { id: 'chat', icon: 'FileText', label: '報告', special: true }, 
+                                { id: 'wallet', icon: 'Gift', label: '特典' },
+                                { id: 'profile', icon: 'User', label: '設定' }
+                            ].map(item => {
+                                if (item.special) {
+                                    return (
+                                        <button key={item.id} onClick={() => setIsChatOpen(true)} className="relative -top-5 group">
+                                            {/* Pulse Effect for Mandatory Task */}
+                                            <div className="absolute inset-0 bg-rose-500 rounded-full animate-ping opacity-20"></div>
+                                            <div className="w-14 h-14 bg-gradient-to-br from-rose-500 to-orange-600 rounded-full shadow-lg shadow-rose-200 flex items-center justify-center text-white transform transition-transform group-active:scale-90 border-2 border-white">
+                                                <Icon name={item.icon} size={24} />
+                                            </div>
+                                            <span className="text-[10px] font-bold text-rose-500 absolute -bottom-5 left-1/2 -translate-x-1/2 w-full text-center tracking-tighter">業務報告</span>
+                                        </button>
+                                    )
+                                }
+                                return (
+                                    <button 
+                                        key={item.id} 
+                                        onClick={() => setActiveTab(item.id)}
+                                        className={`flex flex-col items-center gap-1 w-16 transition-colors ${activeTab === item.id ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                                    >
+                                        <Icon name={item.icon} size={22} className={activeTab === item.id ? 'fill-current' : ''} />
+                                        <span className="text-[10px] font-bold">{item.label}</span>
+                                    </button>
+                                )
+                            })}
+                        </nav>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
