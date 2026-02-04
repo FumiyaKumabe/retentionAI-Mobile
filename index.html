@@ -80,19 +80,19 @@
 
         // --- 2. Mock Data ---
         const USER = {
-            name: "佐藤 健一",
+            name: "隈部 文哉",
             rank: "Gold",
             points: 2450,
             nextRankPoints: 3000,
             rankProgress: 81,
-            avatar: "SK",
+            avatar: "FK",
             department: "第2警備隊"
         };
 
         const MISSIONS = [
-            { id: 99, title: "AI業務報告・健康チェック", points: 300, done: false, required: true, type: "AI" },
-            { id: 1, title: "制服チェック", points: 20, done: true, required: false },
-            { id: 3, title: "無遅刻 (週間継続中)", points: 100, done: false, badge: "BONUS", required: false }
+            { id: 99, title: "AI業務報告・健康チェック", points: 100, done: false, required: true, type: "AI" },
+            { id: 1, title: "日報報告", points: 50, done: true, required: false },
+            { id: 3, title: "無遅刻無欠席(月間)", points: 100, done: false, badge: "BONUS", required: false }
         ];
 
         const COUPONS = [
@@ -166,7 +166,7 @@
                     setIsRecording(false);
                     setMessages([...messages, { id: Date.now(), sender: "user", text: "（音声入力）特に問題ありません。今日も通常通り現場に向かいます。", time: "Just now" }]);
                     setTimeout(() => {
-                        setMessages(prev => [...prev, { id: Date.now()+1, sender: "ai", text: "確認しました。それでは本日の業務も安全第一でお願いします。行ってらっしゃいませ！\n（日報提出タスク完了：+300pt）", time: "Just now", type: "success" }]);
+                        setMessages(prev => [...prev, { id: Date.now()+1, sender: "ai", text: "確認しました。それでは本日の業務も安全第一でお願いします。行ってらっしゃいませ！\n（週報提出タスク完了：+300pt）", time: "Just now", type: "success" }]);
                     }, 1500);
                 } else {
                     setIsRecording(true);
@@ -371,8 +371,8 @@
                                 {USER.avatar}
                             </div>
                             <div>
-                                <h1 className="font-bold text-slate-800 leading-tight">お疲れ様です！</h1>
-                                <p className="text-xs text-slate-500">{USER.name}さん</p>
+                                <h1 className="font-bold text-slate-800 leading-tight">株式会社ビジコン警備</h1>
+                                <p className="text-xs text-slate-500">{USER.name}</p>
                             </div>
                         </div>
                         <button className="relative p-2 bg-white rounded-full text-slate-400 shadow-sm border border-slate-100">
@@ -569,3 +569,4 @@
 </body>
 
 </html>
+
