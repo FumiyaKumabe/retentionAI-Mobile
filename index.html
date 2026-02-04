@@ -96,11 +96,11 @@
         ];
 
         const COUPONS = [
-            { id: 1, title: "カフェ無料券", points: 500, icon: "Coffee", color: "bg-amber-100 text-amber-600" },
-            { id: 2, title: "Amazonギフト ¥1000", points: 2000, icon: "CreditCard", color: "bg-blue-100 text-blue-600" },
+            { id: 1, title: "スタバクーポン ¥500", points: 500, icon: "Coffee", color: "bg-amber-100 text-amber-600" },
+            { id: 2, title: "Amazonギフト ¥1000", points: 1000, icon: "CreditCard", color: "bg-blue-100 text-blue-600" },
             // Changed from Special Leave Ticket to Catalog Gift
             { id: 3, title: "選べるカタログギフト ¥5000", points: 5000, icon: "Gift", color: "bg-purple-100 text-purple-600" },
-            { id: 4, title: "コンビニクーポン ¥500", points: 1000, icon: "ShoppingBag", color: "bg-emerald-100 text-emerald-600" },
+            { id: 4, title: "コンビニクーポン ¥500", points: 500, icon: "ShoppingBag", color: "bg-emerald-100 text-emerald-600" },
         ];
 
         // --- 3. Components ---
@@ -141,11 +141,11 @@
             const [isReportMode, setIsReportMode] = useState(true);
             
             const [messages, setMessages] = useState([
-                { id: 101, sender: "ai", text: "【自動送信】佐藤さん、おはようございます。昨日の勤務お疲れ様でした。", time: "Yesterday 09:00", type: "system" },
-                { id: 102, sender: "user", text: "日報提出します。特異事項なし。21:00に搬入口でセンサー誤作動ありましたが対応済みです。", time: "Yesterday 09:15" },
-                { id: 103, sender: "ai", text: "報告ありがとうございます。センサー誤作動の件、管制日報に転記しました。詳細な場所は「北側搬入口」で間違いないですか？", time: "Yesterday 09:16" },
-                { id: 104, sender: "user", text: "はい、北側です。", time: "Yesterday 09:17" },
-                { id: 105, sender: "ai", text: "了解しました。本日の業務前の体調確認を行います。現在、腰の痛みや疲労感はどうですか？", time: "Today 17:00", type: "system" }
+                { id: 101, sender: "ai", text: "佐藤さん、おはようございます。先週の業務報告をお願いいたします。体調などお変わりはありませんか？", time: "Yesterday 09:00", type: "system" },
+                { id: 102, sender: "user", text: "体調は大丈夫だけど、今の現場は場所が遠くて。朝が早くて少ししんどいです。", time: "Yesterday 09:15" },
+                { id: 103, sender: "ai", text: "報告ありがとうございます。以前にお話しされていた腰の痛みは大丈夫ですか？", time: "Yesterday 09:16" },
+                { id: 104, sender: "user", text: "はい、もう大丈夫です。", time: "Yesterday 09:17" },
+                { id: 105, sender: "ai", text: "よかったです。引き続きよろしくお願いいたします。その他、報告や相談はございますか？", time: "Today 17:00", type: "system" }
             ]);
             const messagesEndRef = useRef(null);
 
@@ -388,7 +388,7 @@
                                 <Icon name="AlertTriangle" size={18} />
                             </div>
                             <div>
-                                <h3 className="font-bold text-rose-600 text-sm">本日の業務報告が未完了です</h3>
+                                <h3 className="font-bold text-rose-600 text-sm">今週の業務報告が未完了です</h3>
                                 <p className="text-[10px] text-rose-400 mt-1 leading-tight">業務終了後、必ずAI面談を実施してください。<br/>未実施の場合、勤怠承認が行われません。</p>
                             </div>
                         </div>
@@ -414,7 +414,7 @@
                                         <h3 className="font-black text-lg tracking-wide">AI業務報告を開始</h3>
                                         <span className="bg-white/20 text-[10px] px-2 py-0.5 rounded font-bold backdrop-blur">必須</span>
                                     </div>
-                                    <p className="text-xs text-rose-50 opacity-90">本日の体調・ヒヤリハット報告</p>
+                                    <p className="text-xs text-rose-50 opacity-90">今週の業務報告を開始してください</p>
                                 </div>
                                 <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white">
                                     <Icon name="ChevronRight" size={18}/>
@@ -426,7 +426,7 @@
                     {/* Missions (Light Mode) */}
                     <div>
                         <div className="flex justify-between items-end mb-3">
-                            <h3 className="font-bold text-slate-700">本日のタスクリスト</h3>
+                            <h3 className="font-bold text-slate-700">ボーナスタスク</h3>
                             <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">残り 2つ</span>
                         </div>
                         <div className="space-y-3">
@@ -567,4 +567,5 @@
         root.render(<App />);
     </script>
 </body>
+
 </html>
